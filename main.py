@@ -1,6 +1,6 @@
 
 
-from core.parser import Parser
+from core.core import Core
 from ui.cli import CLI
 
-CLI(Parser)
+CLI(Core)

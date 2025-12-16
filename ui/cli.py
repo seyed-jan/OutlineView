@@ -2,8 +2,9 @@ import os
 from colorama import Fore
 
 class CLI:
-    def __init__(self, ParserFunction):
-        self.parser = ParserFunction
+    def __init__(self, Backend):
+        self.backend = Backend()
+
         os.system('cls' if os.name == 'nt' else 'clear')
         print("Welcom to OutlineView Command Line Interface!")
 
@@ -14,23 +15,23 @@ class CLI:
             if command[0] == "help":
                 self.ShowHelp()
             
-            if command[0] == "add-file":
+            elif command[0] == "add-file":
                 try:
                     command[1]
                 except:
                     print(Fore.RED, f"add-file has one parametr: add-file <path>. please trye agane.", Fore.RESET)
                     continue
-                else:    
-                    self.AddFile(command[1])
+                else:
+                    self.backend.AddFile(command[1])
 
-            if command[0] == "show-to-level":
+            elif command[0] == "show-to-level":
                 try:
                     command[1]
                 except:
                     print(Fore.RED, f"show-to-level has one parametr: show-to-level <level>. please trye agane", Fore.RESET)    
                 else:
                     try:
-                        self.result
+                        self.backend.document
                     except:
                         print(Fore.RED, "Not Added A File. Use add-file", Fore.RESET)
                         continue
@@ -42,64 +43,41 @@ class CLI:
                                 print(Fore.RED, f"'{command[1]}' is not a number. please onle enter number of level or 'all' for all levels.", Fore.RESET)
                                 continue
                             else:
-                                self.ShowLevels(command[1])
+                                self.backend.UpdateResultForShowToLevel(command[1])
+                                os.system('cls' if os.name == 'nt' else 'clear')
+                                self.ShowInTerminal()
+                                print("\n")
                         elif command[1] == "all":
-                            self.ShowLevels(command[1])
+                            self.backend.UpdateResultForShowToLevel(command[1])
+                            os.system('cls' if os.name == 'nt' else 'clear')
+                            self.ShowInTerminal()
+                            print("\n")
 
-            if command[0] == "exit":
+            elif command[0] == "exit":
                 print("Good By!")
                 break
+            
+            else:
+                print(Fore.RED, f"'{command[0]}' Not Found! 'help' for show help.", Fore.RESET)
+
     
     def ShowHelp(self):
         print("""
 This is OutlineView CLI.
-help                                    show help.
-exit                                    exit from cli.
-add-file <word-file-path>               add a word file with path.
-show-to-level <level:.\example>         show file to <level> level with tree view.
-        """)
-
-    def AddFile(self, path):
-        if os.path.exists(path):
-            self.FilePath = path
-            self.result = self.parser(path)
-        else:
-            print(Fore.RED, f"'{path}' Not Found or it is wrong! please trye agane.", Fore.RESET)
+help                                              show help.
+exit                                              exit from cli.
+add-file <word-file-path:.\example>               add a word file with path.
+show-to-level <level>                             show file to <level> level with tree view.
+            """)
 
 
-    def FilterByLevel(self, result, level, current_level=1):
-        fresult = []
-        for node in result:
-            if node["data"].style.name == "Normal":
-                continue
-            new_node = {
-                "data": node["data"],
-                "childrens": []
-            }
-
-            if current_level < level:
-                new_node["childrens"] = self.FilterByLevel(
-                node["childrens"],
-                level,
-                current_level + 1
-            )
-
-            fresult.append(new_node)
-        return fresult
-
-    def ShowLevels(self, level):
-        os.system('cls' if os.name == 'nt' else 'clear')
-        if level == "all":
-            self.ShowInTerminal(self.result)
-        else:
-            fresult = self.FilterByLevel(self.result, int(level))
-            self.ShowInTerminal(fresult)
-        print("\n")
-
-    def ShowInTerminal(self, result, first_level=0):
+    def ShowInTerminal(self, result=None, first_level=0):
+        if result is None:
+            result = self.backend.GetResult()
+        
         for item in result:
             if item["data"].style.name != "Normal":
-                print(first_level*" "+"~ "+item["data"].text)
+                print(first_level*" "+f"{first_level+1}- "+item["data"].text)
                 self.ShowInTerminal(item["childrens"], first_level+1)
             else:
-                print(first_level*" "+"- "+item["data"].text)
+                print(first_level*" "+"~ "+item["data"].text)
